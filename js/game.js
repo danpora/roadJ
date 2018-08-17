@@ -4,9 +4,9 @@ Physijs.scripts.ammo = 'js/ammo.js';
 
 // loaders
 let modelLoader;
-let textureLoader
+let textureLoader;
 
-// world 
+// world
 let brickMaterial;
 let ground;
 let light;
@@ -72,7 +72,20 @@ function initScene() {
   renderer.shadowMapSoft = true;
   renderer.setClearColor(0xffffff, 1);
 
+  // add 3d renderer to dom
   document.getElementById('viewport').appendChild(renderer.domElement);
+  
+  // add time view to dom
+  const timeDom = document.createElement('DIV');
+  timeDom.id = 'time';
+  timeDom.style = "position: fixed; top: 100px; left: 100px";
+  document.getElementById('viewport').appendChild(timeDom);
+
+  // add distance to dom
+  const distanceNode = document.createElement('DIV');
+  distanceNode.id = 'distance';
+  distanceNode.style = "position: fixed; top: 130px; left: 100px";
+  document.getElementById('viewport').appendChild(distanceNode);
 
   // Init scene
   scene = new Physijs.Scene();
@@ -117,7 +130,7 @@ function initScene() {
   scene.add(light);
 
   textureLoader = new THREE.TextureLoader();
-  
+
   const groundTexture = textureLoader.load('images/road.jpeg');
   groundTexture.wrapS = THREE.RepeatWrapping;
   groundTexture.wrapT = THREE.RepeatWrapping;
@@ -164,7 +177,10 @@ function initScene() {
   modelLoader = new THREE.JSONLoader();
 
   modelLoader.load('models/mustang.js', function(car, materials) {
-    modelLoader.load('models/mustang_wheel.js', function(wheel, wheelMaterials) {
+    modelLoader.load('models/mustang_wheel.js', function(
+      wheel,
+      wheelMaterials,
+    ) {
       let mesh = new Physijs.BoxMesh(
         car,
         new THREE.MeshFaceMaterial(materials),
@@ -202,7 +218,6 @@ function initScene() {
       };
 
       bindInputEvents(ioInput);
-
     });
   });
 
@@ -211,11 +226,21 @@ function initScene() {
   scene.simulate();
 }
 
+function updatePlayMeta() {
+  // update game time
+  const time = performance.now() / 1000;
+  document.getElementById('time').innerHTML = 'Time: ' + time.toFixed(3);
+
+  const distance = -1*vehicle.mesh.position.x;
+  document.getElementById('distance').innerHTML = 'Distance: ' + distance.toFixed(3);
+}
+
 function updateGameObjects() {
-  const randomBricks = Math.floor(Math.random() * 5) + 1;
+  const randomBricks = Math.floor(Math.random() * 3) + 1;
   for (let i = 0; i < randomBricks; i++) {
     brickCreator(brickMaterial);
   }
+
 }
 
 function brickCreator(brickMaterial) {
@@ -224,9 +249,16 @@ function brickCreator(brickMaterial) {
   const { x, y, z } = vehicle.mesh.position;
 
   let size = Math.random() * 2 + 1.5;
-  let brick = new Physijs.BoxMesh(new THREE.BoxGeometry(size, size, size), brickMaterial);
+  let brick = new Physijs.BoxMesh(
+    new THREE.BoxGeometry(size, size, size),
+    brickMaterial,
+  );
   brick.castShadow = brick.receiveShadow = true;
-  brick.position.set(x + Math.random() * 25 - 50, y + 5, z + Math.random() * 25 - 50);
+  brick.position.set(
+    x + Math.random() * 25 - 50,
+    y + 5,
+    z + Math.random() * 25 - 50,
+  );
   scene.add(brick);
 }
 
@@ -238,6 +270,8 @@ function render() {
     camera.position.set(x + 50, y + 20, z + 50);
     camera.lookAt(vehicle.mesh.position);
   }
+  
+  updatePlayMeta();
   renderer.render(scene, camera);
 }
 
